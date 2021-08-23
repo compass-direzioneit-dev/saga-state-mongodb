@@ -33,14 +33,18 @@ class MongoDBRepository implements RepositoryInterface
     {
         $query   = $this->createQuery($criteria, $sagaId);
         $results = $query->execute();
-        $count   = count($results);
 
-        if ($count === 1) {
-            return State::deserialize(current($results->toArray()));
+        $ret = null;
+        foreach ($results as $result) {
+            if (null !== $ret) {
+                throw new RepositoryException('Multiple saga state instances found.');
+            }
+
+            $ret = $result;
         }
 
-        if ($count > 1) {
-            throw new RepositoryException('Multiple saga state instances found.');
+        if (null !== $ret) {
+            return State::deserialize($ret);
         }
 
         return null;
